@@ -4,14 +4,11 @@ const createLine = (Line, Type, Name='', Condition='', Value='') => {
     return {'line': Line, 'type': Type, 'name': Name, 'condition': Condition, 'value': Value};
 };
 
-const getOriginalText = (originalText, parsedCodeJSON) => {
-    if(parsedCodeJSON == null) return null;
-
+const multipleLineOriginalText = (originalText, parsedCodeJSON) => {
     let startLine = parsedCodeJSON['loc']['start']['line'], startCol = parsedCodeJSON['loc']['start']['column'],
         endLine = parsedCodeJSON['loc']['end']['line'], endCol = parsedCodeJSON['loc']['end']['column'];
     let splitText = originalText.split('\n'), fullTextAns = '';
-    if (startLine == endLine)
-        return splitText[startLine-1].substring(startCol, endCol);
+
     for (let x = startLine-1; x < endLine ; x++){
         if (x == startLine-1)
             fullTextAns += splitText[x].substring(startCol, splitText[x].length);
@@ -21,6 +18,18 @@ const getOriginalText = (originalText, parsedCodeJSON) => {
             fullTextAns += splitText[x];
     }
     return fullTextAns;
+};
+
+const getOriginalText = (originalText, parsedCodeJSON) => {
+    if(parsedCodeJSON == null) return null;
+
+    let startLine = parsedCodeJSON['loc']['start']['line'], startCol = parsedCodeJSON['loc']['start']['column'],
+        endLine = parsedCodeJSON['loc']['end']['line'], endCol = parsedCodeJSON['loc']['end']['column'];
+    let splitText = originalText.split('\n');
+    if (startLine == endLine)
+        return splitText[startLine-1].substring(startCol, endCol);
+
+    return multipleLineOriginalText(originalText, parsedCodeJSON);
 };
 
 const handleIfStatement = (parsedCodeJSON, originalText, is_else=false) => {
@@ -65,10 +74,10 @@ const handleFunctionDeclaration = (parsedCodeJSON, originalText) => {
 };
 
 const handleBlockStatement = (parsedCodeJSON, originalText) => {
-    let ansArr = []
-    // if an object and not a series of commands
-    if (!Array.isArray(parsedCodeJSON['body']))
-        return ansArr.concat(produceTable(parsedCodeJSON['body'], originalText));
+    let ansArr = [];
+    // if an object and not a series of commands ------------ turns out it's not even possible
+    //if (!Array.isArray(parsedCodeJSON['body']))
+    //    return ansArr.concat(produceTable(parsedCodeJSON['body'], originalText));
 
     // if is series of command (eg: is array).
     for (let x = 0; x < parsedCodeJSON['body'].length ; x++)
@@ -78,7 +87,7 @@ const handleBlockStatement = (parsedCodeJSON, originalText) => {
 };
 
 const handleVariableDeclaration = (parsedCodeJSON, originalText) => {
-    let ansArr = []
+    let ansArr = [];
 
     for (let x = 0; x < parsedCodeJSON['declarations'].length ; x++)
         ansArr.push(createLine(parsedCodeJSON['declarations'][x]['id']['loc']['start']['line'],
@@ -95,7 +104,7 @@ const handleExpressionStatement = (parsedCodeJSON, originalText) => {
 };
 
 const handleWhileStatement = (parsedCodeJSON, originalText) => {
-    let ansArr = []
+    let ansArr = [];
 
     ansArr.push(createLine(parsedCodeJSON['loc']['start']['line'], 'while statement',
         '', getOriginalText(originalText, parsedCodeJSON['test'])));
@@ -105,7 +114,7 @@ const handleWhileStatement = (parsedCodeJSON, originalText) => {
 };
 
 const handleForStatement = (parsedCodeJSON, originalText) => {
-    let ansArr = []
+    let ansArr = [];
 
     ansArr.push(createLine(parsedCodeJSON['loc']['start']['line'], 'for statement', '',
         getOriginalText(originalText, parsedCodeJSON['init']) +
